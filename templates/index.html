@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT Asset Tracker & API Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; background-color: #f4f7f6; }
+        h1, h2 { color: #333; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        form { display: grid; grid-template-columns: repeat(5, 1fr) 100px; gap: 10px; margin-bottom: 20px; }
+        input, select, button { padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        button { background-color: #0052CC; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #003d99; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+        th { background-color: #f8f9fa; }
+        .btn-delete { background-color: #d9534f; color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💻 Enterprise IT Asset Management Tracker</h1>
+        
+        <h2>Add New Device</h2>
+        <form id="asset-form">
+            <input type="text" id="device_name" placeholder="Device Name (e.g. MacBook Pro)" required>
+            <input type="text" id="category" placeholder="Category (e.g. Laptop)" required>
+            <input type="text" id="assigned_user" placeholder="Assigned User" required>
+            <select id="status">
+                <option value="In Use">In Use</option>
+                <option value="In Repair">In Repair</option>
+                <option value="Decommissioned">Decommissioned</option>
+            </select>
+            <input type="text" id="ip_address" placeholder="IP Address (Optional)">
+            <button type="submit">Add Asset</button>
+        </form>
+
+        <h2>Inventory Database</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Device Name</th>
+                    <th>Category</th>
+                    <th>Assigned User</th>
+                    <th>Status</th>
+                    <th>IP Address</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="asset-table-body">
+                <!-- Dynamic Data Rows -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const API_URL = '/api/assets';
+
+        async function fetchAssets() {
+            const res = await fetch(API_URL);
+            const assets = await res.json();
+            const tbody = document.getElementById('asset-table-body');
+            tbody.innerHTML = '';
+            
+            assets.forEach(asset => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${asset.id}</td>
+                        <td>${asset.device_name}</td>
+                        <td>${asset.category}</td>
+                        <td>${asset.assigned_user}</td>
+                        <td><strong>${asset.status}</strong></td>
+                        <td>${asset.ip_address}</td>
+                        <td><button class="btn-delete" onclick="deleteAsset(${asset.id})">Delete</button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        document.getElementById('asset-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newAsset = {
+                device_name: document.getElementById('device_name').value,
+                category: document.getElementById('category').value,
+                assigned_user: document.getElementById('assigned_user').value,
+                status: document.getElementById('status').value,
+                ip_address: document.getElementById('ip_address').value
+            };
+
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newAsset)
+            });
+
+            document.getElementById('asset-form').reset();
+            fetchAssets();
+        });
+
+        async function deleteAsset(id) {
+            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            fetchAssets();
+        }
+
+        fetchAssets();
+    </script>
+</body>
+</html>
